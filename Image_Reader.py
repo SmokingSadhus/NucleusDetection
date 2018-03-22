@@ -41,36 +41,54 @@ print(im.getdata()[4156])
 
 ####(1, 608, 608, 4)
 
-def draw_boxes(image, out_scores, out_boxes, out_classes, class_names, colors):
+test_samp = np.zeros((19,19,5))
+
+masks = []
+
+for mask in masks:
+    im = Image.open(mask, 'r')
+    resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
+    image_data = np.array(resized_image, dtype='float32')
+    image_data /= 255.
+    x,y,x_c,y_c,h,w = get_bounding_boxes(image_data)
+    test_samp[x,y,:] = (1,x_c,y_c,h,w)
     
-    font = ImageFont.truetype(font='font/FiraMono-Medium.otf',size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
-    thickness = (image.size[0] + image.size[1]) // 300
+    
+def get_bounding_boxes(image_data):
+    x_c = 0
+    y_c = 0
+    tot = 0
+    x_min = 609
+    x_max = -1
+    y_min = 609
+    y_max = -1
+    for i in range (image_data.shape[0]):
+        for j in range(image_data.shape[1]):
+            if(image_data[i][j] == 1):
+                x_c = x_c + j
+                y_c = y_c + i
+                tot = tot + 1
+                if j < x_min:
+                    x_min = j
+                if j > x_max:
+                    x_max = j
+                if i < y_min:
+                    y_min = i
+                if i > y_max:
+                    y_max = i
+    x_c = x_c / tot
+    y_c = y_c / tot
+    h = y_max - y_min
+    w = x_max - x_min
+    x = x_c / 32
+    y = y_c / 32
+    return (x,y,x_c,y_c,h,w)
+    
+            
+    
+    
 
-    for i, c in reversed(list(enumerate(out_classes))):
-        predicted_class = class_names[c]
-        box = out_boxes[i]
-        score = out_scores[i]
 
-        label = '{} {:.2f}'.format(predicted_class, score)
 
-        draw = ImageDraw.Draw(image)
-        label_size = draw.textsize(label, font)
 
-        top, left, bottom, right = box
-        top = max(0, np.floor(top + 0.5).astype('int32'))
-        left = max(0, np.floor(left + 0.5).astype('int32'))
-        bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
-        right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-        print(label, (left, top), (right, bottom))
 
-        if top - label_size[1] >= 0:
-            text_origin = np.array([left, top - label_size[1]])
-        else:
-            text_origin = np.array([left, top + 1])
-
-        # My kingdom for a good redistributable image drawing library.
-        for i in range(thickness):
-            draw.rectangle([left + i, top + i, right - i, bottom - i], outline=colors[c])
-        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=colors[c])
-        draw.text(text_origin, label, fill=(0, 0, 0), font=font)
-        del draw
