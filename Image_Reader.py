@@ -41,26 +41,39 @@ print(im.getdata()[4156])
 
 ####(1, 608, 608, 4)
 
-test_samp = np.zeros((19,19,5))
+###############################################################
+
+img_shape = 608
+
+grid_size = 19
+
+b_box_size = (img_shape/grid_size)
+
+test_samp = np.zeros((grid_size,grid_size,5))
+
+######################################################################################################################################################
+
+trn_imgs = []
 
 masks = []
 
+box_size = 
+
 for mask in masks:
     im = Image.open(mask, 'r')
-    resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
+    resized_image = image.resize(tuple(reversed((img_shape,img_shape))), Image.BICUBIC)
     image_data = np.array(resized_image, dtype='float32')
-    image_data /= 255.
-    x,y,x_c,y_c,h,w = get_bounding_boxes(image_data)
+    x,y,x_c,y_c,h,w = get_bounding_boxes(image_data , box_size)
     test_samp[x,y,:] = (1,x_c,y_c,h,w)
     
     
-def get_bounding_boxes(image_data):
+def get_bounding_boxes(image_data , box_size):
     x_c = 0
     y_c = 0
     tot = 0
-    x_min = 609
+    x_min = (image_data.shape[0] + 1)
     x_max = -1
-    y_min = 609
+    y_min = (image_data.shape[0] + 1)
     y_max = -1
     for i in range (image_data.shape[0]):
         for j in range(image_data.shape[1]):
@@ -80,9 +93,9 @@ def get_bounding_boxes(image_data):
     y_c = y_c / tot
     h = y_max - y_min
     w = x_max - x_min
-    x = x_c / 32
-    y = y_c / 32
-    return (x,y,x_c,y_c,h,w)
+    x = x_c // 32
+    y = y_c // 32
+    return (int(x),int(y),x_c,y_c,h,w)
     
             
     
