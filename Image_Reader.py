@@ -1,7 +1,11 @@
 
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
+import os
 #im = Image.open('D:\\Kaggle\\stage1_train\\1b518cd2ea84a389c267662840f3d902d0129fab27696215db2488de6d4316c5\\images\\1b518cd2ea84a389c267662840f3d902d0129fab27696215db2488de6d4316c5.png', 'r')
+
+rootdir = 'D:\Kaggle\stage1_train'
+
 path = '0c320c4d08c83f73721ef5777768a5024dbae66294fd93f49d4f2e1d9fd81aa3.png'
 im = Image.open(path, 'r')
 
@@ -31,8 +35,6 @@ print(image_data.shape)
 
 exit()
 
-
-
 pix_val = list(im.getdata())
 print(pix_val[0])
 print(len(pix_val))
@@ -43,6 +45,11 @@ print(im.getdata()[4156])
 
 ###############################################################
 
+rootdir = 'D:\Kaggle\stage1_train'
+
+for dirs in os.walk(rootdir):
+    print(dirs) 
+
 img_shape = 608
 
 grid_size = 19
@@ -50,8 +57,6 @@ grid_size = 19
 b_box_size = (img_shape/grid_size)
 
 test_samp = np.zeros((grid_size,grid_size,5))
-
-######################################################################################################################################################
 
 trn_imgs = []
 
@@ -93,8 +98,8 @@ def get_bounding_boxes(image_data , box_size):
     y_c = y_c / tot
     h = y_max - y_min
     w = x_max - x_min
-    x = x_c // 32
-    y = y_c // 32
+    x = x_c // box_size
+    y = y_c // box_size
     return (int(x),int(y),x_c,y_c,h,w)
     
             
