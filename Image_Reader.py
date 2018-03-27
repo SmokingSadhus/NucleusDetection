@@ -6,9 +6,72 @@ import os
 
 rootdir = 'D:\Kaggle\stage1_train'
 
-path = '0c320c4d08c83f73721ef5777768a5024dbae66294fd93f49d4f2e1d9fd81aa3.png'
-im = Image.open(path, 'r')
+im_size = set()
 
+for subdir in os.listdir(rootdir):
+    rootdir_2 = rootdir + '\\'+ subdir
+    #print(img_count)
+    img_dir =  os.listdir(rootdir_2)[0]
+    mask_dir = os.listdir(rootdir_2)[1]
+    img_file = rootdir_2 + '\\' + img_dir + '\\' + os.listdir(rootdir_2 + '\\' + img_dir)[0]
+    im = Image.open(img_file)
+    image_data = np.array(im, dtype='float32')
+    im_size.add(image_data.shape)
+
+exit()
+
+path = 'D:\\Kaggle\\stage1_train\\00071198d059ba7f5914a526d124d28e6d010c92466da21d4a04cd5413362552\\masks\\5522143fa8723b66b1e0b25331047e6ae6eeec664f7c8abeba687e0de0f9060a.png'
+
+path = 'D:\\Kaggle\\stage1_train\\00071198d059ba7f5914a526d124d28e6d010c92466da21d4a04cd5413362552\\masks\\07a9bf1d7594af2763c86e93f05d22c4d5181353c6d3ab30a345b908ffe5aadc.png'
+
+
+
+def preprocess_mask(mask,model_image_size):
+    im = Image.open(mask, 'r')
+    #im = im.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
+    im = im.resize(model_image_size)
+    image_data = np.array(im, dtype='float32')
+    return image_data
+
+def preprocess_image(img_path, model_image_size):
+    #image_type = imghdr.what(img_path)
+    image = Image.open(img_path)
+    #resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
+    resized_image = image.resize(model_image_size)
+    image_data = np.array(resized_image, dtype='float32')
+    print(image_data.shape)
+    image_data /= 255.
+    #image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
+    image_data =image_data[:,:,0:3]
+    return image, image_data
+
+#image_data = preprocess_mask(path,model_image_size =(608,608))
+
+img_path = 'D:\\Kaggle\\stage1_train\\0b0d577159f0d6c266f360f7b8dfde46e16fa665138bf577ec3c6f9c70c0cd1e\\images\\0b0d577159f0d6c266f360f7b8dfde46e16fa665138bf577ec3c6f9c70c0cd1e.png'
+
+img, image_data = preprocess_image(img_path, model_image_size =(608,608))
+
+print(image_data.shape[0])
+print(image_data.shape[1])
+
+exit()
+
+#im = Image.open(path)
+#image_data = np.array(im)
+
+#print(image_data)
+
+st = set()
+
+for i in range(image_data.shape[0]):
+    for j in range(image_data.shape[1]):
+        if(int(image_data[i][j]) != 0):
+            st.add(image_data[i][j])
+
+for i in st:
+    print(i)
+
+exit()
 
 image_data = np.array(im, dtype='float32')
 #image_data =image_data[:,:,0:3]
@@ -62,7 +125,7 @@ trn_imgs = []
 
 masks = []
 
-box_size = 
+#box_size = 
 
 for mask in masks:
     im = Image.open(mask, 'r')
@@ -102,9 +165,11 @@ def get_bounding_boxes(image_data , box_size):
     y = y_c // box_size
     return (int(x),int(y),x_c,y_c,h,w)
     
-            
+###################################################
+
+
     
-    
+
 
 
 
