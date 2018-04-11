@@ -2,7 +2,9 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
-rootdir = 'D:\Kaggle\stage1_train'
+#rootdir = 'D:\Kaggle\stage1_train'
+
+rootdir = 'D:\Kaggle\mask_and_train_check'
 
 img_shape = 608
 
@@ -76,13 +78,47 @@ def get_bounding_boxes(image_data , box_size):
     y = y_c // box_size
     return (int(x),int(y),x_c,y_c,h,w)
 
+def get_bounding_boxes(image_data , box_size):
+    row_c = 0
+    col_c = 0
+    tot = 0
+    row_min = (image_data.shape[0] + 1)
+    row_max = -1
+    col_min = (image_data.shape[1] + 1)
+    col_max = -1
+    for i in range (image_data.shape[0]):
+        for j in range(image_data.shape[1]):
+            if(int(image_data[i][j]) == 255):
+                row_c = row_c + i
+                col_c = col_c + j
+                tot = tot + 1
+                if j < col_min:
+                    col_min = j
+                if j > col_max:
+                    col_max = j
+                if i < row_min:
+                    row_min = i
+                if i > row_max:
+                    row_max = i
+    #if tot == 0:
+    #    print('problem')
+    #    return (0,0,0,0,0,0)
+    row_c = row_c / tot
+    col_c = col_c / tot
+    h = row_max - row_min
+    w = col_max - col_min
+    row = row_c // box_size
+    col = col_c // box_size
+    return (int(row),int(col),row_c,col_c,h,w)
+
 
 for subdir in os.listdir(rootdir):
     rootdir_2 = rootdir + '\\'+ subdir
-    #print(img_count)
+    print(img_count)
     img_dir =  os.listdir(rootdir_2)[0]
     mask_dir = os.listdir(rootdir_2)[1]
     img_file = rootdir_2 + '\\' + img_dir + '\\' + os.listdir(rootdir_2 + '\\' + img_dir)[0]
+    print(img_file)
     img, img_preproc = preprocess_image(img_file,model_image_size = (img_shape, img_shape))
     trn_imgs[img_count,:,:,:] =  img_preproc
     #trn_imgs.append
@@ -92,17 +128,30 @@ for subdir in os.listdir(rootdir):
     for mask in mask_files:
         #print(mask)
         image_data = preprocess_mask(mask,model_image_size = (img_shape, img_shape))
-        x,y,x_c,y_c,h,w = get_bounding_boxes(image_data , b_box_size)
-        mask_op[img_count, x , y ,:] = (1,x_c,y_c,h,w)
+        row,col,row_c,col_c,h,w = get_bounding_boxes(image_data , b_box_size)
+        mask_op[img_count, row , col ,:] = (1,row_c,col_c,h,w)
     img_count = img_count + 1
     
+#########
 
+np.save('trn_chk.npy', trn_imgs)
+np.save('mask_chk.npy', mask_op)
 
+#exit()
 
+#d = np.load('test3.npy')
 
-    
-    
-    
+#f_img = mask_op[0]
+
+#f_img = mask_op[1]
+
+##########################
+#for i in range(f_img.shape[0]):
+#	for j in range(f_img.shape[1]):
+#		if  int(f_img[i][j][0]) != 0:
+#			print (f_img[i,j,:])
+#			print (str(i) + '  ' + str(j))
+ ################################   
     
         
         
