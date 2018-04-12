@@ -1,10 +1,11 @@
 import os
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
+from sklearn.model_selection import train_test_split
 
-#rootdir = 'D:\Kaggle\stage1_train'
+rootdir = 'D:\Kaggle\stage1_train'
 
-rootdir = 'D:\Kaggle\mask_and_train_check'
+#rootdir = 'D:\Kaggle\mask_and_train_check'
 
 img_shape = 608
 
@@ -12,13 +13,15 @@ grid_size = 19
 
 b_box_size = (img_shape/grid_size)
 
-test_samp = np.zeros((grid_size,grid_size,5))
+#test_samp = np.zeros((grid_size,grid_size,5))
 
 no_of_imgs = len(os.listdir(rootdir))
 
 trn_imgs = np.zeros((no_of_imgs,img_shape,img_shape,3))
 
 mask_op = np.zeros((no_of_imgs,grid_size,grid_size,5))
+
+trn_tst_split = 0.5
 
 #for subdirs in os.walk(rootdir):
 #    path = rootdir + subdirs[1]
@@ -45,38 +48,38 @@ def preprocess_mask(mask,model_image_size):
     return image_data
 
     
-def get_bounding_boxes(image_data , box_size):
-    x_c = 0
-    y_c = 0
-    tot = 0
-    x_min = (image_data.shape[0] + 1)
-    x_max = -1
-    y_min = (image_data.shape[0] + 1)
-    y_max = -1
-    for i in range (image_data.shape[0]):
-        for j in range(image_data.shape[1]):
-            if(int(image_data[i][j]) == 255):
-                x_c = x_c + j
-                y_c = y_c + i
-                tot = tot + 1
-                if j < x_min:
-                    x_min = j
-                if j > x_max:
-                    x_max = j
-                if i < y_min:
-                    y_min = i
-                if i > y_max:
-                    y_max = i
+#def get_bounding_boxes(image_data , box_size):
+#    x_c = 0
+#    y_c = 0
+#    tot = 0
+#    x_min = (image_data.shape[0] + 1)
+#    x_max = -1
+#    y_min = (image_data.shape[0] + 1)
+#    y_max = -1
+#    for i in range (image_data.shape[0]):
+#        for j in range(image_data.shape[1]):
+#            if(int(image_data[i][j]) == 255):
+#                x_c = x_c + j
+#                y_c = y_c + i
+#                tot = tot + 1
+#                if j < x_min:
+#                    x_min = j
+#                if j > x_max:
+#                    x_max = j
+#                if i < y_min:
+#                    y_min = i
+#                if i > y_max:
+#                    y_max = i
     #if tot == 0:
     #    print('problem')
     #    return (0,0,0,0,0,0)
-    x_c = x_c / tot
-    y_c = y_c / tot
-    h = y_max - y_min
-    w = x_max - x_min
-    x = x_c // box_size
-    y = y_c // box_size
-    return (int(x),int(y),x_c,y_c,h,w)
+#    x_c = x_c / tot
+#    y_c = y_c / tot
+#    h = y_max - y_min
+#    w = x_max - x_min
+#    x = x_c // box_size
+#    y = y_c // box_size
+#    return (int(x),int(y),x_c,y_c,h,w)
 
 def get_bounding_boxes(image_data , box_size):
     row_c = 0
@@ -134,8 +137,14 @@ for subdir in os.listdir(rootdir):
     
 #########
 
-np.save('trn_chk.npy', trn_imgs)
-np.save('mask_chk.npy', mask_op)
+#np.save('trn_chk.npy', trn_imgs)
+#np.save('mask_chk.npy', mask_op)
+
+np.save('trn.npy', trn_imgs)
+
+np.save('mask.npy', mask_op)
+
+data_train, data_test, labels_train, labels_test = train_test_split(trn_imgs, mask_op, test_size=trn_tst_split, random_state=42)
 
 #exit()
 
@@ -144,6 +153,8 @@ np.save('mask_chk.npy', mask_op)
 #f_img = mask_op[0]
 
 #f_img = mask_op[1]
+
+#f_img = labels_train[0]
 
 ##########################
 #for i in range(f_img.shape[0]):
