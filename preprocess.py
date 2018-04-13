@@ -3,9 +3,9 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-rootdir = 'D:\Kaggle\stage1_train'
+#rootdir = 'D:\Kaggle\stage1_train'
 
-#rootdir = 'D:\Kaggle\mask_and_train_check'
+rootdir = 'D:\Kaggle\mask_and_train_check'
 
 img_shape = 608
 
@@ -145,6 +145,11 @@ np.save('trn.npy', trn_imgs)
 np.save('mask.npy', mask_op)
 
 data_train, data_test, labels_train, labels_test = train_test_split(trn_imgs, mask_op, test_size=trn_tst_split, random_state=42)
+
+np.save('data_train.npy',data_train)
+np.save('data_test.npy',data_test)
+np.save('labels_train.npy',labels_train)
+np.save('labels_test.npy',labels_test)
 
 #exit()
 
