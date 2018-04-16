@@ -13,6 +13,9 @@ grid_size = 19
 
 b_box_size = (img_shape/grid_size)
 
+#b_box_size converted to box_scale for getting lower value coordinates for centers of objects row_c, col_c 
+box_scale = 5
+
 #test_samp = np.zeros((grid_size,grid_size,5))
 
 no_of_imgs = len(os.listdir(rootdir))
@@ -108,11 +111,17 @@ def get_bounding_boxes(image_data , box_size):
     #    return (0,0,0,0,0,0)
     row_c = row_c / tot
     col_c = col_c / tot
+    row_c_box = (((row_c % box_size) * box_scale) / box_size)
+    col_c_box = (((col_c % box_size) * box_scale) / box_size)
     h = row_max - row_min
+    #Height with respect to box size
+    h = h/box_size
     w = col_max - col_min
+    #Width with respect to box size
+    w = w/box_size
     row = row_c // box_size
     col = col_c // box_size
-    return (int(row),int(col),row_c,col_c,h,w)
+    return (int(row),int(col),row_c_box,col_c_box,h,w)
 
 
 for subdir in os.listdir(rootdir):

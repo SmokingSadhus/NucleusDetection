@@ -1,8 +1,12 @@
+import tensorflow as tf
 import numpy as np
 from keras import layers
 from keras.models import Model
 from keras.layers import Input, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Conv2D
 from keras.layers import AveragePooling2D, MaxPooling2D, Dropout, GlobalMaxPooling2D, GlobalAveragePooling2D
+
+lambda_obj = 1
+lambda_noobj = 1
 
 
 def model(input_shape):
@@ -45,12 +49,32 @@ def model(input_shape):
 
     return model
 
+def yolo_loss(y_true, y_pred):
+    class_error = tf.reduce_sum(tf.multiply((y_true[:,:,0]-y_pred[:,:,0]),(y_true[:,:,0]-y_pred[:,:,0])))
+    row_error = tf.reduce_sum(tf.multiply((y_true[:,:,1]-y_pred[:,:,1]),(y_true[:,:,1]-y_pred[:,:,1])))
+    col_error = tf.reduce_sum(tf.multiply((y_true[:,:,2]-y_pred[:,:,2]),(y_true[:,:,2]-y_pred[:,:,2])))
+    h_error = tf.reduce_sum(tf.sqrt(y_true[:,:,3])-tf.sqrt(y_pred[:,:,3]))
+    w_error = tf.reduce_sum(tf.sqrt(y_true[:,:,4])-tf.sqrt(y_pred[:,:,4]))
+    e1 = tf.add(class_error,row_error)
+    e2 = tf.add(e1,col_error)
+    e3 = tf.add(e2,h_error)
+    e4 = tf.add(e3,w_error)
+    return e4
+    
+    #y_true[:,:,0] - y_pred[:,:,0]
+    
+    
+
 X_train = np.load('data_train.npy')
 Y_train = np.load('labels_train.npy')
 X_test = np.load('data_test.npy')
 Y_test = np.load('labels_test.npy')
 
 nucleus_model = model(X_train.shape[1:])
+
+
+
+
 
 
 

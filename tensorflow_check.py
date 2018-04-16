@@ -11,3 +11,16 @@ import tensorflow as tf
 
 from keras import backend as K
 K.tensorflow_backend._get_available_gpus()
+
+
+##################################### Basic Tensorflow operations and checks ######################################
+a = tf.Variable(np.random.rand(2,2,2))
+b = tf.Variable(np.random.rand(2,2,2))
+init = tf.variables_initializer([a, b])
+m_check = tf.reduce_sum(tf.multiply((a[:,:,0]-b[:,:,0]),(a[:,:,0]-b[:,:,0])))
+with tf.Session() as sess:
+	sess.run(init)
+	print(sess.run(a[:,:,0]))
+	print(sess.run(b[:,:,0]))
+	print(sess.run(m_check))
+############################################################################
