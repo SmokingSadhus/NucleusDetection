@@ -3,9 +3,9 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-#rootdir = 'D:\Kaggle\stage1_train'
+rootdir = 'D:\Kaggle\stage1_train'
 
-rootdir = 'D:\Kaggle\mask_and_train_check'
+#rootdir = 'D:\Kaggle\mask_and_train_check'
 
 img_shape = 608
 
@@ -24,7 +24,7 @@ trn_imgs = np.zeros((no_of_imgs,img_shape,img_shape,3))
 
 mask_op = np.zeros((no_of_imgs,grid_size,grid_size,5))
 
-trn_tst_split = 0.5
+trn_tst_split = 0.8
 
 #for subdirs in os.walk(rootdir):
 #    path = rootdir + subdirs[1]
@@ -126,11 +126,11 @@ def get_bounding_boxes(image_data , box_size):
 
 for subdir in os.listdir(rootdir):
     rootdir_2 = rootdir + '\\'+ subdir
-    print(img_count)
+    #print(img_count)
     img_dir =  os.listdir(rootdir_2)[0]
     mask_dir = os.listdir(rootdir_2)[1]
     img_file = rootdir_2 + '\\' + img_dir + '\\' + os.listdir(rootdir_2 + '\\' + img_dir)[0]
-    print(img_file)
+    #print(img_file)
     img, img_preproc = preprocess_image(img_file,model_image_size = (img_shape, img_shape))
     trn_imgs[img_count,:,:,:] =  img_preproc
     #trn_imgs.append
@@ -149,9 +149,9 @@ for subdir in os.listdir(rootdir):
 #np.save('trn_chk.npy', trn_imgs)
 #np.save('mask_chk.npy', mask_op)
 
-np.save('trn.npy', trn_imgs)
+#np.save('trn.npy', trn_imgs)
 
-np.save('mask.npy', mask_op)
+#np.save('mask.npy', mask_op)
 
 data_train, data_test, labels_train, labels_test = train_test_split(trn_imgs, mask_op, test_size=trn_tst_split, random_state=42)
 

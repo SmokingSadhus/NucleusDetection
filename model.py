@@ -72,7 +72,15 @@ Y_test = np.load('labels_test.npy')
 
 nucleus_model = model(X_train.shape[1:])
 
+nucleus_model.compile('adam',yolo_loss, metrics=['accuracy'])
 
+nucleus_model.fit(X_train, Y_train, epochs=10, batch_size=50)
+
+preds = nucleus_model.evaluate(X_test, Y_test, batch_size=32, verbose=1, sample_weight=None)
+
+print()
+print ("Loss = " + str(preds[0]))
+print ("Test Accuracy = " + str(preds[1]))
 
 
 
