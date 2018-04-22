@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 #a = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[2, 3], name='a')
 #b = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[3, 2], name='b')
@@ -11,6 +12,22 @@ import tensorflow as tf
 
 from keras import backend as K
 K.tensorflow_backend._get_available_gpus()
+
+
+####################################################################################
+
+a = tf.Variable(np.random.rand(3,3,3))
+#b = tf.Variable(np.random.rand(2,2,2))
+init = tf.variables_initializer([a])
+m_check = tf.concat([tf.sigmoid(a[:,:,0:1]) , tf.nn.relu(a[:,:,1:3])],axis = 2)
+with tf.Session() as sess:
+    sess.run(init)
+    print(sess.run(a))
+    print(m_check.get_shape())
+    print(sess.run(m_check))
+
+exit()
+#############################################################
 
 
 ##################################### Basic Tensorflow operations and checks ######################################

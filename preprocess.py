@@ -14,7 +14,7 @@ grid_size = 19
 b_box_size = (img_shape/grid_size)
 
 #b_box_size converted to box_scale for getting lower value coordinates for centers of objects row_c, col_c 
-box_scale = 5
+box_scale = 1
 
 #test_samp = np.zeros((grid_size,grid_size,5))
 
@@ -24,7 +24,7 @@ trn_imgs = np.zeros((no_of_imgs,img_shape,img_shape,3))
 
 mask_op = np.zeros((no_of_imgs,grid_size,grid_size,5))
 
-trn_tst_split = 0.8
+trn_tst_split = 0.2
 
 #for subdirs in os.walk(rootdir):
 #    path = rootdir + subdirs[1]
