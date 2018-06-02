@@ -13,13 +13,57 @@ import numpy as np
 from keras import backend as K
 K.tensorflow_backend._get_available_gpus()
 
+######################################################################
+a = tf.Variable(np.random.rand(4,3,3,3))
+init = tf.variables_initializer([a])
+m_check = a[:,:,:,1]
+sum_val = tf.reduce_sum(m_check) 
+with tf.Session() as sess:
+    sess.run(init)
+    print(sess.run(a))
+    print(m_check.get_shape())
+    print(sess.run(m_check))
+    print(sess.run(sum_val))
 
-####################################################################################
+exit()
+##########################################################################################################################
 
-a = tf.Variable(np.random.rand(3,3,3))
+a = tf.Variable(np.zeros((4,3,3,3)))
+init = tf.variables_initializer([a])
+m_check = tf.concat([tf.sigmoid(a[:,:,:,0:2]) , tf.nn.relu(a[:,:,:,2:3])],axis = 3)
+with tf.Session() as sess:
+    sess.run(init)
+    print(sess.run(a))
+    print(m_check.get_shape())
+    print(sess.run(m_check))
+
+exit()
+
+
+################################ Check for custom_activation function ####################################################
+
+#a = tf.Variable(np.random.rand(19,19,5))
+a = tf.Variable(np.random.rand(2,2,2))
+init = tf.variables_initializer([a])
+tf.sigmoid(a[:,:,0:1])
+tf.nn.relu(a[:,:,1:2])
+#m_check = tf.concat([tf.sigmoid(a[:,:,0:1]) , tf.nn.relu(a[:,:,1:5])],axis = 2)
+with tf.Session() as sess:
+    sess.run(init)
+    print(sess.run(a))
+    print(a.get_shape())
+    print(sess.run(a))
+
+exit()
+#############################################################
+
+
+################################ Check for custom_activation function ####################################################
+
+a = tf.Variable(np.random.rand(19,19,5))
 #b = tf.Variable(np.random.rand(2,2,2))
 init = tf.variables_initializer([a])
-m_check = tf.concat([tf.sigmoid(a[:,:,0:1]) , tf.nn.relu(a[:,:,1:3])],axis = 2)
+m_check = tf.concat([tf.sigmoid(a[:,:,0:1]) , tf.nn.relu(a[:,:,1:5])],axis = 2)
 with tf.Session() as sess:
     sess.run(init)
     print(sess.run(a))

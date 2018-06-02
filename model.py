@@ -1,4 +1,10 @@
+import os
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+#os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
+#sess = tf.Session()
+import keras.backend as K
+#K.set_session(sess)
 import numpy as np
 from keras import layers
 from keras.models import Model
@@ -7,11 +13,21 @@ from keras.layers import AveragePooling2D, MaxPooling2D, Dropout, GlobalMaxPooli
 from keras.utils.generic_utils import get_custom_objects
 from keras.models import model_from_json
 
+
 lambda_obj = 1
 lambda_noobj = 1
 
 def custom_activation(x):
-    return tf.concat([tf.sigmoid(x[:,:,0:1]) , tf.nn.relu(x[:,:,1:5])],axis = 2)
+    #print(x.shape)
+    #return tf.concat([tf.sigmoid(x[:,:,0:1]) , tf.nn.relu(x[:,:,1:5])],axis = 2)
+    return tf.concat([tf.sigmoid(x[:,:,:,0:1]) , tf.nn.relu(x[:,:,:,1:5])],axis = 3)
+    #tf.sigmoid(x[:,:,:,:,0:1])
+    #tf.nn.relu(x[:,:,:,:,1:5])
+    #return x
+    
+
+#def custom_activation(x):
+#    return K.concatenate([K.sigmoid(x[:,:,0:1]) , K.relu(x[:,:,1:5])],axis = 2)
 
 get_custom_objects().update({'custom_activation': Activation(custom_activation)})
 
@@ -58,19 +74,32 @@ def model(input_shape):
     return model
 
 def yolo_loss(y_true, y_pred):
-    class_error = tf.reduce_sum(tf.multiply((y_true[:,:,0]-y_pred[:,:,0]),(y_true[:,:,0]-y_pred[:,:,0])))
-    row_error = tf.reduce_sum(tf.multiply((y_true[:,:,1]-y_pred[:,:,1]),(y_true[:,:,1]-y_pred[:,:,1])))
-    col_error = tf.reduce_sum(tf.multiply((y_true[:,:,2]-y_pred[:,:,2]),(y_true[:,:,2]-y_pred[:,:,2])))
-    h_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,3])-tf.sqrt(y_pred[:,:,3])))
-    w_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,4])-tf.sqrt(y_pred[:,:,4])))
+    #print(y_pred.shape)
+    #print(y_true.shape)
+    class_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,0]-y_pred[:,:,:,0]),(y_true[:,:,:,0]-y_pred[:,:,:,0])))
+    row_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,1]-y_pred[:,:,:,1]),(y_true[:,:,:,1]-y_pred[:,:,:,1])))
+    col_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,2]-y_pred[:,:,:,2]),(y_true[:,:,:,2]-y_pred[:,:,:,2])))
+    h_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,:,3])-tf.sqrt(y_pred[:,:,:,3])))
+    w_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,:,4])-tf.sqrt(y_pred[:,:,:,4])))
     e1 = tf.add(class_error,row_error)
     e2 = tf.add(e1,col_error)
     e3 = tf.add(e2,h_error)
     e4 = tf.add(e3,w_error)
-    return e4
-    
+    #print(e4.shape)
+    return e4/y_true.shape[0]
+
+
     #y_true[:,:,0] - y_pred[:,:,0]
-    
+
+#def yolo_loss(y_true, y_pred):
+#    print(y_pred.shape)
+#    print(y_true.shape)
+#    class_error = K.sum(K.square((y_true[:,:,0]-y_pred[:,:,0])))
+#    row_error = K.sum(K.square((y_true[:,:,1]-y_pred[:,:,1])))
+#    col_error = K.sum(K.square((y_true[:,:,2]-y_pred[:,:,2])))
+#    h_error = K.sum(K.abs(K.sqrt(y_true[:,:,3])-K.sqrt(y_pred[:,:,3])))
+#    w_error = K.sum(K.abs(K.sqrt(y_true[:,:,4])-K.sqrt(y_pred[:,:,4])))
+#    return  (class_error+ row_error + col_error +  h_error + w_error)
     
 
 X_train = np.load('data_train.npy')
@@ -78,20 +107,45 @@ Y_train = np.load('labels_train.npy')
 X_test = np.load('data_test.npy')
 Y_test = np.load('labels_test.npy')
 
+###################SizeReduction#############################
+
+#X_train = X_train[0:1,:,:,:]
+#Y_train = Y_train[0:1,:,:,:]
+#X_test = X_test[0:1,:,:,:]
+#Y_test = Y_test[0:1,:,:,:]
+
+#print(X_train.shape)
+#print(Y_train.shape)
+#print(X_test.shape)
+#print(Y_test.shape)
+
+#############################################################
+
 
 nucleus_model = model(X_train.shape[1:])
-
-#nucleus_model.compile('adam',yolo_loss, metrics=['accuracy'])
 
 nucleus_model.compile('adam',yolo_loss)
 
 nucleus_model.fit(X_train, Y_train, epochs=40, batch_size=25)
 
-preds = nucleus_model.evaluate(X_test, Y_test, batch_size=32, verbose=1, sample_weight=None)
+#nucleus_model.fit_generator(X_train, Y_train, epochs=1, batch_size=25)
 
-print()
-print ("Loss = " + str(preds))
-#print ("Test Accuracy = " + str(preds[1]))
+#preds = nucleus_model.evaluate(X_test, Y_test, batch_size=32, verbose=1, sample_weight=None)
+
+#print()
+#print ("Loss = " + str(preds))
+
+#print(X_test.shape)
+
+o_p = nucleus_model.predict(X_test)
+
+#o_p = nucleus_model.predict_generator(X_test)
+
+print(o_p.shape)
+
+print(nucleus_model.summary())
+
+exit()
 
 nucleus_model_json = nucleus_model.to_json()
 with open("nucleus_model.json", "w") as json_file:
