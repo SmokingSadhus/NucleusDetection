@@ -2,7 +2,15 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from sklearn.model_selection import train_test_split
+#################
 
+#image = Image.open("D:\Kaggle\extendedTestCrop.png")
+#print(image.size)
+#image_data = np.array(image, dtype='float32')
+#print(image_data.shape)
+
+#exit()
+#############################
 
 rootdir = 'D:\Kaggle\stage1_test'
 
@@ -23,13 +31,14 @@ tst_img = np.zeros((1,img_shape,img_shape,3))
 def preprocess_image(img_path, model_image_size):
     #image_type = imghdr.what(img_path)
     image = Image.open(img_path)
+    w,h = image.size
     resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
     #resized_image = image.resize(model_image_size)
     image_data = np.array(resized_image, dtype='float32')
     image_data /= 255.
     #image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
     image_data =image_data[:,:,0:3]
-    return image, image_data
+    return image, image_data,h,w
 
 for subdir in os.listdir(rootdir):
     rootdir_2 = rootdir + '\\'+ subdir
@@ -38,11 +47,11 @@ for subdir in os.listdir(rootdir):
     mask_dir = os.listdir(rootdir_2)[1]
     img_file = rootdir_2 + '\\' + img_dir + '\\' + os.listdir(rootdir_2 + '\\' + img_dir)[0]
     #print(img_file)
-    img, img_preproc = preprocess_image_and_retSize(img_file,model_image_size = (img_shape, img_shape))
+    img, img_preproc,old_height,old_width = preprocess_image_and_retSize(img_file,model_image_size = (img_shape, img_shape))
     tst_img[1,:,:,:] =  img_preproc
     o_p = nucleus_model.predict(tst_img)
     o_p_img = o_p[1,:,:,:]
-    retrieved_img = np.zeros((img_shape,img_shape))
+    retrieved_img = np.zeros((img_shape,img_shape,3))
     for i in range (o_p_img.shape[0]):
         for j in range(o_p_img.shape[1]):
             if o_p_img[i][j][0]  > 0.5:
@@ -62,8 +71,14 @@ for subdir in os.listdir(rootdir):
                 c_top = int(c_top)
                 for r in range(r_top,r_top+h_actual+1):
                     for c in range(c_top,c_top + w_actual+1):
-                        retrieved_img[r][c] = 1
-                        
+                        retrieved_img[r][c][0] = 255
+                        retrieved_img[r][c][1] = 255
+                        retrieved_img[r][c][2] = 255
+    retrieved_img_conv_To_img_form = Image.fromarray(retrieved_img)
+    orig_image = retrieved_img_conv_To_img_form.resize((old_width,old_height))
+    orig_image_arr = np.array(orig_image, dtype='float32')
+    
+      
             
 
     #trn_imgs.append
