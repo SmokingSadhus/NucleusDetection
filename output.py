@@ -40,18 +40,70 @@ def preprocess_image(img_path, model_image_size):
     image_data =image_data[:,:,0:3]
     return image, image_data,h,w
 
+
+# Not a good method for eliminating boxes, as we remove one of the 2 intersecting boxes(box with lower confidence). Use method in coursera deep learning course instead.
+def remove_intersecting_boxes(orig_image_arr_list,confidence_list):
+    pixel_to_img = dict()
+    int count = 0
+    list_of_removables = []
+    for orig_image in orig_image_arr_list:
+        for i in range (orig_image.shape[0]):
+            for j in range(orig_image.shape[1]):
+                if orig_image[i][j][0] == 255:
+                    key = ((j*orig_image.shape[0]) + i)
+                    if key in pixel_to_img:
+                        old = pixel_to_img[key]
+                        if confidence_list[old] >= confidence_list[count]:
+                            list_of_removables.add(count)
+                            #Need to fond a way to break here
+                        else:
+                            list_of_removables.add(old)
+                            pixel_to_img[key] = count
+                    else:
+                        pixel_to_img[key] = count
+        count = count + 1
+    ret_list = []
+    for idx, val in enumerate(orig_image_arr_list):
+        if idx not in list_of_removables:
+            ret_list.add(val)
+    return ret_list      
+
+def convert_to_rle(rem_box):
+    ct = 0
+    rle = []
+    for j in range (rem_box.shape[1]):
+        for i in range(rem_box.shape[0]):
+            while i < rem_box.shape[0] and rem_box[i][j][0] == 255:
+                ct = ct + 1
+                i = i + 1
+            i_ori = i - ct
+            pixel = (j * rem_box.shape[0]) + i_ori + 1
+            rle.add((pixel,ct))
+                
+            
+            
+            
+                
+                
+    
+
+
 for subdir in os.listdir(rootdir):
+    rle_op = dict()
     rootdir_2 = rootdir + '\\'+ subdir
     #print(img_count)
     img_dir =  os.listdir(rootdir_2)[0]
     mask_dir = os.listdir(rootdir_2)[1]
-    img_file = rootdir_2 + '\\' + img_dir + '\\' + os.listdir(rootdir_2 + '\\' + img_dir)[0]
+    img_file_name = os.listdir(rootdir_2 + '\\' + img_dir)[0]
+    #img_file = rootdir_2 + '\\' + img_dir + '\\' + os.listdir(rootdir_2 + '\\' + img_dir)[0]
+    img_file = rootdir_2 + '\\' + img_dir + '\\' + img_file_name
     #print(img_file)
     img, img_preproc,old_height,old_width = preprocess_image_and_retSize(img_file,model_image_size = (img_shape, img_shape))
     tst_img[1,:,:,:] =  img_preproc
     o_p = nucleus_model.predict(tst_img)
     o_p_img = o_p[1,:,:,:]
-    retrieved_img = np.zeros((img_shape,img_shape,3))
+    retrieved_img_list = []
+    confidence_list = []
     #changed iterating order to match submission format
     for j in range (o_p_img.shape[1]):
         for i in range(o_p_img.shape[0]):
@@ -70,11 +122,24 @@ for subdir in os.listdir(rootdir):
                 c_top = col_c - w_actual/2
                 r_top = int(r_top)
                 c_top = int(c_top)
+                retrieved_img = np.zeros((img_shape,img_shape,3))
                 for r in range(r_top,r_top+h_actual+1):
                     for c in range(c_top,c_top + w_actual+1):
                         retrieved_img[r][c][0] = 255
                         retrieved_img[r][c][1] = 255
                         retrieved_img[r][c][2] = 255
-    retrieved_img_conv_To_img_form = Image.fromarray(retrieved_img)
-    orig_image = retrieved_img_conv_To_img_form.resize((old_width,old_height))
-    orig_image_arr = np.array(orig_image, dtype='float32')
+                retrieved_img_list.add(retrieved_img)
+                confidence_list.add(o_p_img[i][j][0])
+    retrieved_img_conv_To_img_form_list = [ Image.fromarray(retrieved_img) for retrieved_img in  retrieved_img_list]
+    orig_image_list = [retrieved_img_conv_To_img_form.resize((old_width,old_height)) for retrieved_img_conv_To_img_form in retrieved_img_conv_To_img_form_list]
+    orig_image_arr_list = [np.array(orig_image, dtype='float32') for orig_image in orig_image_list]
+    rem_box_list = remove_intersecting_boxes(orig_image_arr_list,confidence_list)
+    list_of_rle_values = []
+    for rem_box in rem_box_list:
+        list_of_rle_values.add(convert_to_rle(rem_box))
+    rle_op[img_file_name] =  list_of_rle_values       
+        
+        
+        
+    
+    
