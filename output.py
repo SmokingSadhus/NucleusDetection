@@ -2,6 +2,7 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from sklearn.model_selection import train_test_split
+import csv
 #################
 
 #image = Image.open("D:\Kaggle\extendedTestCrop.png")
@@ -72,24 +73,35 @@ def convert_to_rle(rem_box):
     ct = 0
     rle = []
     for j in range (rem_box.shape[1]):
-        for i in range(rem_box.shape[0]):
+        i = 0
+        while i < rem_box.shape[0]:
+            ct = 0
             while i < rem_box.shape[0] and rem_box[i][j][0] == 255:
                 ct = ct + 1
                 i = i + 1
-            i_ori = i - ct
-            pixel = (j * rem_box.shape[0]) + i_ori + 1
-            rle.add((pixel,ct))
-                
-            
-            
-            
-                
-                
-    
+            if ct > 0:
+                i_ori = i - ct
+                pixel = (j * rem_box.shape[0]) + i_ori + 1
+                rle.add(pixel)
+                rle.add(ct)
+    return rle
 
+def write_to_csv(rle_op):
+    with open('output.csv', 'w') as csvfile:
+    fieldnames = ['ImageId', 'EncodedPixels']
+    writer = csv.DictWriter(csvfile, lineterminator='\n' ,fieldnames=fieldnames)
+    writer.writeheader()
+    for image_id in rle_op.keys():
+        list_of_masks = rle_op[image_id]
+        for mask in list_of_masks:
+            mask_str = ''
+            for pix_dist in mask:
+                mask_str = mask_str + pix_dist + ' '
+            writer.writerow({'ImageId':image_id,EncodedPixels:mask_str})
+
+rle_op = dict()
 
 for subdir in os.listdir(rootdir):
-    rle_op = dict()
     rootdir_2 = rootdir + '\\'+ subdir
     #print(img_count)
     img_dir =  os.listdir(rootdir_2)[0]
