@@ -73,34 +73,45 @@ def model(input_shape):
 
     return model
 
+#def yolo_loss(y_true, y_pred):
+    #print(y_pred.shape)
+    #print(y_true.shape)
+#    class_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,0]-y_pred[:,:,:,0]),(y_true[:,:,:,0]-y_pred[:,:,:,0])))
+#    row_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,1]-y_pred[:,:,:,1]),(y_true[:,:,:,1]-y_pred[:,:,:,1])))
+#    col_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,2]-y_pred[:,:,:,2]),(y_true[:,:,:,2]-y_pred[:,:,:,2])))
+#    h_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,:,3])-tf.sqrt(y_pred[:,:,:,3])))
+#    w_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,:,4])-tf.sqrt(y_pred[:,:,:,4])))
+#    e1 = tf.add(class_error,row_error)
+#    e2 = tf.add(e1,col_error)
+#    e3 = tf.add(e2,h_error)
+#    e4 = tf.add(e3,w_error)
+    #print(e4.shape)
+#    return e4/y_true.shape[0]
+
 def yolo_loss(y_true, y_pred):
     #print(y_pred.shape)
     #print(y_true.shape)
-    class_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,0]-y_pred[:,:,:,0]),(y_true[:,:,:,0]-y_pred[:,:,:,0])))
-    row_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,1]-y_pred[:,:,:,1]),(y_true[:,:,:,1]-y_pred[:,:,:,1])))
-    col_error = tf.reduce_sum(tf.multiply((y_true[:,:,:,2]-y_pred[:,:,:,2]),(y_true[:,:,:,2]-y_pred[:,:,:,2])))
-    h_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,:,3])-tf.sqrt(y_pred[:,:,:,3])))
-    w_error = tf.reduce_sum(tf.abs(tf.sqrt(y_true[:,:,:,4])-tf.sqrt(y_pred[:,:,:,4])))
-    e1 = tf.add(class_error,row_error)
-    e2 = tf.add(e1,col_error)
-    e3 = tf.add(e2,h_error)
-    e4 = tf.add(e3,w_error)
-    #print(e4.shape)
-    return e4/y_true.shape[0]
+    y_ret = tf.zeros([1,y_true.shape[0]])
+    for i in range(0,int(y_true.shape[0])):
+        op1 = y_true[i,:,:,:]
+        op2 = y_pred[i,:,:,:]
+        class_error = tf.reduce_sum(tf.multiply((op1[:,:,0]-op2[:,:,0]),(op1[:,:,0]-op2[:,:,0])))
+        row_error = tf.reduce_sum(tf.multiply((op1[:,:,1]-op2[:,:,1]),(op1[:,:,1]-op2[:,:,1])))
+        col_error = tf.reduce_sum(tf.multiply((op1[:,:,2]-op2[:,:,2]),(op1[:,:,2]-op2[:,:,2])))
+        h_error = tf.reduce_sum(tf.abs(tf.sqrt(op1[:,:,3])-tf.sqrt(op2[:,:,3])))
+        w_error = tf.reduce_sum(tf.abs(tf.sqrt(op1[:,:,4])-tf.sqrt(op2[:,:,4])))
+        total_error = class_error + row_error + col_error + h_error + w_error
+        y_ret[0,i] = total_error
+    return y_ret
 
 
-    #y_true[:,:,0] - y_pred[:,:,0]
 
 #def yolo_loss(y_true, y_pred):
-#    print(y_pred.shape)
-#    print(y_true.shape)
-#    class_error = K.sum(K.square((y_true[:,:,0]-y_pred[:,:,0])))
-#    row_error = K.sum(K.square((y_true[:,:,1]-y_pred[:,:,1])))
-#    col_error = K.sum(K.square((y_true[:,:,2]-y_pred[:,:,2])))
-#    h_error = K.sum(K.abs(K.sqrt(y_true[:,:,3])-K.sqrt(y_pred[:,:,3])))
-#    w_error = K.sum(K.abs(K.sqrt(y_true[:,:,4])-K.sqrt(y_pred[:,:,4])))
-#    return  (class_error+ row_error + col_error +  h_error + w_error)
-    
+#    y_new = y_true - y_pred
+#    y_red = tf.reduce_sum(y_new,axis = -1)
+#    print(y_red.shape)
+#    return y_red
+
 
 X_train = np.load('data_train.npy')
 Y_train = np.load('labels_train.npy')
@@ -124,7 +135,7 @@ Y_test = np.load('labels_test.npy')
 
 nucleus_model = model(X_train.shape[1:])
 
-nucleus_model.compile('adam',yolo_loss)
+nucleus_model.compile(optimizer = 'adam',loss = 'mean_squared_error')
 
 nucleus_model.fit(X_train, Y_train, epochs=40, batch_size=25)
 
@@ -141,11 +152,9 @@ o_p = nucleus_model.predict(X_test)
 
 #o_p = nucleus_model.predict_generator(X_test)
 
-print(o_p.shape)
+#321`print(o_p.shape)
 
 print(nucleus_model.summary())
-
-exit()
 
 nucleus_model_json = nucleus_model.to_json()
 with open("nucleus_model.json", "w") as json_file:
