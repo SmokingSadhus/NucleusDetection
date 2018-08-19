@@ -67,7 +67,8 @@ def model(input_shape):
 
     X = Conv2D(5, (1, 1), strides = (1, 1), name = 'conv5')(X)
     #X = Activation('relu')(X)
-    X = Activation(custom_activation)(X)
+    #X = Activation(custom_activation)(X)
+    X = Activation('sigmoid')(X)
 
     model = Model(inputs = X_input, outputs = X, name='NucleusDetection')
 
@@ -137,7 +138,7 @@ nucleus_model = model(X_train.shape[1:])
 
 nucleus_model.compile(optimizer = 'adam',loss = 'mean_squared_error')
 
-nucleus_model.fit(X_train, Y_train, epochs=40, batch_size=25)
+nucleus_model.fit(X_train, Y_train, epochs=50, batch_size=25)
 
 #nucleus_model.fit_generator(X_train, Y_train, epochs=1, batch_size=25)
 

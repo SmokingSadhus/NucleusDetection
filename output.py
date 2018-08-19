@@ -6,6 +6,7 @@ from keras.layers import Activation
 from keras.models import model_from_json
 from keras.utils.generic_utils import get_custom_objects
 
+
 import numpy as np
 import tensorflow as tf
 
@@ -21,7 +22,11 @@ import time
 # rootdir = 'D:\Kaggle\stage1_test'
 # rootdir = 'D:\Kaggle\stage1testTemp'
 
+# output = 'output_stage_1.csv'
+
 rootdir = 'D:\Kaggle\stage2_test_final'
+
+output = 'output_stage_2.csv'
 
 img_shape = 608
 
@@ -77,94 +82,105 @@ def remove_intersecting_boxes(orig_image_arr_list, confidence_list):
             ret_list.append(val)
     return ret_list
 
-def remove_intersecting_boxes_with_non_max_supression(orig_image_arr_list, confidence_list):
-    boxes = np.zeros((len(orig_image_arr_list), 4))
-    ct = 0
-    for orig_image in orig_image_arr_list:
-        row_first = -1
-        col_first = -1
-        row_last = -1
-        col_last = -1
-        for i in range (orig_image.shape[0]):
-            for j in range(orig_image.shape[1]):
-                if orig_image[i][j][0] == 255:
-                    row_last = i
-                    col_last = j
-                    if row_first == -1:
-                        row_first = i
-                        col_first = j
-        boxes[ct] = (col_first, row_first, col_last, row_last)
-        ct = ct + 1 
-    return non_max_suppression(boxes, confidence_list)
 
+def remove_intersecting_boxes_with_non_max_supression(boxes, confidence_list):
+    return non_max_suppression(boxes, confidence_list)
 
 
 def non_max_suppression(boxes, confidence_list):
     tuple_list = []
     for i in range(len(boxes)):
-        tuple_list.append((i, boxes[i], confidence_list[i]))
+        tuple_list.append((i, boxes[i], (-1 * confidence_list[i])))
     tuple_list.sort(key=lambda tup: tup[2])
     mark_for_delete = [1] * len(tuple_list)
     
     for i in range(len(tuple_list) - 1):
-        if(mark_for_delete[tuple_list[i][0]] != 0 ):
+        if(mark_for_delete[tuple_list[i][0]] != 0):
             for j in range(i + 1, len(tuple_list)):
                 if(mark_for_delete[tuple_list[j][0]] != 0):
                     if(intersects(tuple_list[i][1], tuple_list[j][1])):
                         mark_for_delete[tuple_list[j][0]] = 0
     delete_indices = [i for i, e in enumerate(mark_for_delete) if e == 0]
-    return np.delete(boxes, delete_indices, axis=0)
-    
+    box_rem = np.delete(boxes, delete_indices, axis=0)
+    return box_rem
                     
+def validateValues(box1):
+    if box1[2] < box1[0] or box1[3] < box1[1]:
+        print ('error in box dimensions')
+
+
 def intersects(box1, box2):
-    x_top_left = max(box1[0] , box2[0])
-    x_bottom_right = min(box1[2] , box2[2])
-    y_top_left = max(box1[1] , box2[1])
-    y_bottom_right = min(box1[3] , box2[3])
-    if ((x_top_left >=  x_bottom_right) or (y_top_left >= y_bottom_right)):
+    y_top_left = max(box1[0] , box2[0])
+    y_bottom_right = min(box1[2] , box2[2])
+    x_top_left = max(box1[1] , box2[1])
+    x_bottom_right = min(box1[3] , box2[3])
+    validateValues(box1)
+    validateValues(box2)
+    if ((x_top_left > x_bottom_right) or (y_top_left > y_bottom_right)):
         return False
     else:
-        return True 
+        return True
+    
+     
 
-def convert_to_rle(rem_box):
-    ct = 0
-    rle = []
-    for j in range (rem_box.shape[1]):
-        i = 0
-        while i < rem_box.shape[0]:
-            ct = 0
-            while i < rem_box.shape[0] and rem_box[i][j][0] == 255:
-                ct = ct + 1
-                i = i + 1
-            if ct > 0:
-                i_ori = i - ct
-                pixel = (j * rem_box.shape[0]) + i_ori + 1
-                rle.append(pixel)
-                rle.append(ct)
-            i = i + 1
-    return rle
 
+#def intersects(box1, box2):
+#    validateValues(box1)
+#    validateValues(box2)
+#    l1x = box1[1]
+#    r1x = box1[3]
+#    l2x = box2[1]
+#    r2x = box2[3]
+#    l1y = box1[0]
+#    r1y = box1[2]
+#    l2y = box2[0]
+#    r2y = box2[2]
+#    if (l1x > r2x or l2x > r1x):
+#        return False
+#    if (l1y > r2y or l2y > r1y):
+#        return False
+#    return True
+
+# bool doOverlap(Point l1, Point r1, Point l2, Point r2)
+# {
+#    // If one rectangle is on left side of other
+#    if (l1.x > r2.x || l2.x > r1.x)
+#        return false;
+ 
+#    // If one rectangle is above other
+#    if (l1.y < r2.y || l2.y < r1.y)
+#        return false;
+ 
+#    return true;
+# }
+  
 
 def convert_to_rle_after_non_max(rem_box, rows, cols):
-    row_first = int(rem_box[0])
-    col_first = int(rem_box[1])
-    row_last = int(rem_box[2])
-    col_last = int(rem_box[3])
-    height_of_box = row_last - row_first + 1
+    row_first = rem_box[0]
+    col_first = rem_box[1]
+    row_last = rem_box[2]
+    col_last = rem_box[3]
+    # height_of_box = row_last - row_first+1
+    height_of_box = row_last - row_first
     rle = []
+    if(height_of_box >= rows or row_last >= rows or row_first >= rows):
+        print('Massive error')
     for j in range(col_first, col_last + 1):
         pixel_st = (j * rows) + row_first + 1
         rle.append(pixel_st)
         rle.append(height_of_box)
+    return rle
 
 
 def write_to_csv(rle_op):
-    with open('output.csv', 'w') as csvfile:
+    with open(output, 'w') as csvfile:
         fieldnames = ['ImageId', 'EncodedPixels']
         writer = csv.DictWriter(csvfile, lineterminator='\n' , fieldnames=fieldnames)
         writer.writeheader()
         for image_id in rle_op.keys():
             list_of_masks = rle_op[image_id]
+            if len(list_of_masks) == 0:
+                writer.writerow({'ImageId':image_id, 'EncodedPixels':''})
             for mask in list_of_masks:
                 if mask:
                     mask_str = ''
@@ -179,7 +195,59 @@ def custom_activation(x):
     return tf.concat([tf.sigmoid(x[:, :, :, 0:1]) , tf.nn.relu(x[:, :, :, 1:5])], axis=3)
 
 
+# r_top, c_top, r_top + h_actual, c_top + w_actual
+def reshape(old_values, new_width, new_height, old_width, old_height):
+    r_top = old_values[0]
+    c_top = old_values[1]
+    r_bottom = old_values[2]
+    c_bottom = old_values[3]
+    
+    row_conversion_factor = (new_height / old_height)
+    col_conversion_factor = (new_width / old_width)
+    
+    r_top_new = int( r_top * row_conversion_factor )
+    c_top_new = int( c_top * col_conversion_factor )
+    r_bottom_new = int( r_bottom * row_conversion_factor )
+    c_bottom_new = int( c_bottom * col_conversion_factor )
+    if(r_bottom_new >= new_height or c_bottom_new >= new_width):
+        print('Problems here')
+        exit
+    return [r_top_new, c_top_new, r_bottom_new, c_bottom_new]
+
+
+    
+    
+def convertToNumpy(retrieved_img_list):
+    np_array = np.zeros((len(retrieved_img_list), 4) , dtype=np.int)
+    ct = 0
+    for tup in retrieved_img_list:
+        np_array[ct, :] = tup
+        ct = ct + 1
+    return np_array
+
+
 get_custom_objects().update({'custom_activation': Activation(custom_activation)})
+
+def pairwise(iterable):
+    "s -> (s0, s1), (s2, s3), (s4, s5), ..."
+    a = iter(iterable)
+    return zip(a, a)
+
+#Error detection code for intersection function
+def checkForDuplicates(rle_op):
+    for imd_id in rle_op:
+        common = set()
+        list_of_rles = rle_op[imd_id]
+        for rle in list_of_rles:
+            for st,leng in pairwise(rle):
+                if st < 0 or leng < 0 :
+                    print('start or length are lesser than zero')
+                for j in range(st, st+leng):
+                    if j in common:
+                        print('Error in: ' + imd_id)
+                    else:
+                        common.add(j)
+
 
 ###### Code starts from here #######################################
 
@@ -232,44 +300,34 @@ for subdir in os.listdir(rootdir):
                 col_c = col_c + (j * b_box_size)
                 r_top = row_c - h_actual / 2
                 c_top = col_c - w_actual / 2
-                r_top = int(r_top)
-                c_top = int(c_top)
-                retrieved_img = np.zeros((img_shape, img_shape, 3), dtype=np.uint8)
-                for r in range(r_top, r_top + h_actual + 1):
-                    for c in range(c_top, c_top + w_actual + 1):
-                        retrieved_img[r][c][0] = 255
-                        retrieved_img[r][c][1] = 255
-                        retrieved_img[r][c][2] = 255
-                retrieved_img_list.append(retrieved_img)
+                r_top = max(int(r_top) , 0)
+                c_top = max (int(c_top) , 0)
+                r_bottom = min(int(r_top + h_actual), img_shape - 1)
+                c_bottom = min(int(c_top + w_actual), img_shape - 1)
+                retrieved_img_list.append(reshape([r_top, c_top, r_bottom, c_bottom], old_width, old_height, img_shape, img_shape))
                 confidence_list.append(o_p_img[i][j][0])
     st4_1 = time.time()
     st5 = time.time()
-    retrieved_img_conv_To_img_form_list = [Image.fromarray(retrieved_img) for retrieved_img in  retrieved_img_list]
-    orig_image_list = [retrieved_img_conv_To_img_form.resize((old_width, old_height)) for retrieved_img_conv_To_img_form in retrieved_img_conv_To_img_form_list]
-    orig_image_arr_list = [np.array(orig_image, dtype='float32') for orig_image in orig_image_list]
+#    retrieved_img_conv_To_img_form_list = [Image.fromarray(retrieved_img) for retrieved_img in  retrieved_img_list]
+#    orig_image_list = [retrieved_img_conv_To_img_form.resize((old_width, old_height)) for retrieved_img_conv_To_img_form in retrieved_img_conv_To_img_form_list]
+#    orig_image_arr_list = [np.array(orig_image, dtype='float32') for orig_image in orig_image_list]
     st6 = time.time()
     st7 = time.time()
     
-    # orig_image_rows and orig_image_cols should ideally be equal to old_height and old_width
-    if len(orig_image_arr_list) == 0:
-        orig_image_rows = old_height
-        orig_image_cols = old_width
-    else:
-        orig_image_rows = (orig_image_arr_list[0]).shape[0]
-        orig_image_cols = (orig_image_arr_list[0]).shape[1]
+    reshaped_box_coordinates = convertToNumpy(retrieved_img_list)
     
-    rem_box_list = remove_intersecting_boxes_with_non_max_supression(orig_image_arr_list, confidence_list)
-    
+    # rem_box_list = remove_intersecting_boxes_with_non_max_supression(orig_image_arr_list, confidence_list)
+    rem_box_list = remove_intersecting_boxes_with_non_max_supression(reshaped_box_coordinates, confidence_list)
     st8 = time.time()
     list_of_rle_values = []
     st9 = time.time()
     for rem_box_index in range(rem_box_list.shape[0]):
-        list_of_rle_values.append(convert_to_rle_after_non_max(rem_box_list[rem_box_index], orig_image_rows, orig_image_cols))
+        list_of_rle_values.append(convert_to_rle_after_non_max(rem_box_list[rem_box_index], old_height, old_width))
         
 #    for rem_box in rem_box_list:
 #        list_of_rle_values.append(convert_to_rle_after_non_max(rem_box, orig_image_rows, orig_image_cols))
     st10 = time.time()
-    rle_op[img_file_name] = list_of_rle_values
+    rle_op[img_file_name[:-4]] = list_of_rle_values
     print("Time for preproc " + str(st2 - st1))
     print("Time for predict " + str(st4 - st3))
     print("Time for resultIteration " + str(st4_1 - st3_1))
@@ -279,6 +337,7 @@ for subdir in os.listdir(rootdir):
     print("Finished with " + img_file_name)
 
 st11 = time.time()
+checkForDuplicates(rle_op)
 write_to_csv(rle_op)
 st12 = time.time()
     
