@@ -22,9 +22,10 @@ no_of_imgs = len(os.listdir(rootdir))
 
 trn_imgs = np.zeros((no_of_imgs,img_shape,img_shape,3))
 
-mask_op = np.zeros((no_of_imgs,grid_size,grid_size,5))
+mask_op = np.zeros((no_of_imgs,grid_size,grid_size,1,6))
 
-trn_tst_split = 0.2
+#trn_tst_split = 0.2
+trn_tst_split = 0.0
 
 #for subdirs in os.walk(rootdir):
 #    path = rootdir + subdirs[1]
@@ -141,7 +142,7 @@ for subdir in os.listdir(rootdir):
         #print(mask)
         image_data = preprocess_mask(mask,model_image_size = (img_shape, img_shape))
         row,col,row_c,col_c,h,w = get_bounding_boxes(image_data , b_box_size)
-        mask_op[img_count, row , col ,:] = (1,row_c,col_c,h,w)
+        mask_op[img_count, row , col , 0 ,:] = (row_c,col_c,h,w,1,1)
     img_count = img_count + 1
     
 #########
@@ -153,13 +154,17 @@ for subdir in os.listdir(rootdir):
 
 #np.save('mask.npy', mask_op)
 
-data_train, data_test, labels_train, labels_test = train_test_split(trn_imgs, mask_op, test_size=trn_tst_split, random_state=42)
+#data_train, data_test, labels_train, labels_test = train_test_split(trn_imgs, mask_op, test_size=trn_tst_split, random_state=42)
 
-np.save('data_train.npy',data_train)
-np.save('data_test.npy',data_test)
-np.save('labels_train.npy',labels_train)
-np.save('labels_test.npy',labels_test)
+#np.save('data_train.npy',data_train)
+#np.save('data_test.npy',data_test)
+#np.save('labels_train.npy',labels_train)
+#np.save('labels_test.npy',labels_test)
 
+
+np.save('data_train.npy',trn_imgs)
+
+np.save('labels_train.npy',mask_op)
 #exit()
 
 #d = np.load('test3.npy')

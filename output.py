@@ -281,17 +281,17 @@ for subdir in os.listdir(rootdir):
     st3 = time.time()
     o_p = nucleus_model.predict(tst_img)
     st4 = time.time()
-    o_p_img = o_p[0, :, :, :]
+    o_p_img = o_p[0, : , : , : , : ]
     retrieved_img_list = []
     confidence_list = []
     st3_1 = time.time()
     for j in range (o_p_img.shape[1]):
         for i in range(o_p_img.shape[0]):
-            if o_p_img[i][j][0] > 0.5:
-                row_c = o_p_img[i][j][1]
-                col_c = o_p_img[i][j][2]
-                h = o_p_img[i][j][3]
-                w = o_p_img[i][j][4]
+            if o_p_img[i][j][0][4] > 0.5:
+                row_c = o_p_img[i][j][0][0]
+                col_c = o_p_img[i][j][0][1]
+                h = o_p_img[i][j][0][2]
+                w = o_p_img[i][j][0][3]
                 h_actual = int(h * b_box_size)
                 w_actual = int(w * b_box_size)
                 row_c = row_c * b_box_size / box_scale
@@ -305,7 +305,7 @@ for subdir in os.listdir(rootdir):
                 r_bottom = min(int(r_top + h_actual), img_shape - 1)
                 c_bottom = min(int(c_top + w_actual), img_shape - 1)
                 retrieved_img_list.append(reshape([r_top, c_top, r_bottom, c_bottom], old_width, old_height, img_shape, img_shape))
-                confidence_list.append(o_p_img[i][j][0])
+                confidence_list.append(o_p_img[i][j][0][4])
     st4_1 = time.time()
     st5 = time.time()
 #    retrieved_img_conv_To_img_form_list = [Image.fromarray(retrieved_img) for retrieved_img in  retrieved_img_list]
