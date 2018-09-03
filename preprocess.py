@@ -16,11 +16,15 @@ b_box_size = (img_shape/grid_size)
 #b_box_size converted to box_scale for getting lower value coordinates for centers of objects row_c, col_c 
 box_scale = 1
 
+TRUE_BOX_BUFFER = 50
+
 #test_samp = np.zeros((grid_size,grid_size,5))
 
 no_of_imgs = len(os.listdir(rootdir))
 
 trn_imgs = np.zeros((no_of_imgs,img_shape,img_shape,3))
+
+true_boxes = np.zeros((no_of_imgs, 1, 1, 1, TRUE_BOX_BUFFER, 4))
 
 mask_op = np.zeros((no_of_imgs,grid_size,grid_size,1,6))
 
@@ -131,18 +135,24 @@ for subdir in os.listdir(rootdir):
     img_dir =  os.listdir(rootdir_2)[0]
     mask_dir = os.listdir(rootdir_2)[1]
     img_file = rootdir_2 + '\\' + img_dir + '\\' + os.listdir(rootdir_2 + '\\' + img_dir)[0]
-    #print(img_file)
+    print(img_file)
     img, img_preproc = preprocess_image(img_file,model_image_size = (img_shape, img_shape))
     trn_imgs[img_count,:,:,:] =  img_preproc
     #trn_imgs.append
     mask_files = []
     for mf in os.listdir(rootdir_2 + '\\' + mask_dir):
         mask_files.append(rootdir_2 + '\\' + mask_dir + '\\' + mf)
+    
+    true_box_index = 0
+    
     for mask in mask_files:
         #print(mask)
         image_data = preprocess_mask(mask,model_image_size = (img_shape, img_shape))
         row,col,row_c,col_c,h,w = get_bounding_boxes(image_data , b_box_size)
         mask_op[img_count, row , col , 0 ,:] = (row_c,col_c,h,w,1,1)
+        true_boxes[img_count, 0, 0, 0, true_box_index] = (row_c,col_c,h,w)
+        true_box_index += 1
+        true_box_index = true_box_index % TRUE_BOX_BUFFER
     img_count = img_count + 1
     
 #########
@@ -165,6 +175,8 @@ for subdir in os.listdir(rootdir):
 np.save('data_train.npy',trn_imgs)
 
 np.save('labels_train.npy',mask_op)
+
+np.save('True_Boxes.npy', true_boxes)
 #exit()
 
 #d = np.load('test3.npy')
